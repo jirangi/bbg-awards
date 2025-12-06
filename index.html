@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>BBG Awards 투표</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #020617;
+      color: #e5e7eb;
+    }
+    a { color: #38bdf8; }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+    h1 {
+      font-size: 24px;
+      margin: 16px 0;
+      text-align: center;
+    }
+    .card {
+      background: #0f172a;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+    }
+    .card h2 {
+      font-size: 18px;
+      margin: 0 0 12px;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    select, input[type="password"], textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #1f2937;
+      background: #020617;
+      color: #e5e7eb;
+      font-size: 14px;
+    }
+    textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    button {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      background: #22c55e;
+      color: #022c22;
+      font-weight: 600;
+    }
+    button.secondary {
+      background: #0f172a;
+      color: #e5e7eb;
+      border: 1px solid #1e293b;
+      margin-left: 8px;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .hidden { display: none; }
+    .error { color: #fecaca; font-size: 13px; margin-top: 6px; }
+    .notice { color: #a5b4fc; font-size: 13px; margin-top: 6px; }
+
+    .award-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .award-title {
+      font-weight: 600;
+      font-size: 16px;
+    }
+    .award-kind {
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid #1e293b;
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+    .award-desc {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 8px;
+      white-space: pre-line;
+    }
+    .award-footer {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .award-footer span {
+      white-space: nowrap;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .option-card {
+      border-radius: 10px;
+      border: 1px solid #1e293b;
+      padding: 8px;
+      background: #020617;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+    }
+    .option-card input[type="radio"] {
+      margin-right: 4px;
+      transform: translateY(1px);
+    }
+    .option-card img {
+      width: 100%;
+      border-radius: 8px;
+      object-fit: cover;
+      max-height: 140px;
+    }
+    .option-label-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .login-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      gap: 8px;
+    }
+    .login-info span {
+      white-space: nowrap;
+    }
+    @media (max-width: 600px) {
+      .login-info { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1>BBG Awards 투표</h1>
+
+    <!-- 로그인 카드 -->
+    <div id="login-card" class="card">
+      <h2>로그인</h2>
+      <p style="font-size:13px; color:#9ca3af; margin-top:0;">
+        본인 이름을 선택하고 PIN을 입력하면 투표를 시작할 수 있어요. 같은 상에는 언제든지 다시 들어와서 <b>투표 수정</b>도 가능합니다.
+      </p>
+      <div>
+        <label for="user-select">참가자 선택</label>
+        <select id="user-select">
+          <option value="">불러오는 중...</option>
+        </select>
+      </div>
+      <div style="margin-top:10px;">
+        <label for="pin-input">PIN (4자리 등)</label>
+        <input id="pin-input" type="password" maxlength="20" />
+      </div>
+      <button id="login-btn">로그인</button>
+      <div id="login-message" class="error"></div>
+    </div>
+
+    <!-- 투표 카드 -->
+    <div id="vote-card" class="card hidden">
+      <div class="login-info">
+        <div>
+          <span id="current-user-name"></span>
+          <span style="font-size:12px; color:#9ca3af;" id="current-user-id"></span>
+        </div>
+        <div>
+          <button id="reload-btn" class="secondary">새로고침</button>
+          <button id="logout-btn" class="secondary">로그아웃</button>
+        </div>
+      </div>
+      <p style="font-size:13px; color:#9ca3af; margin-top:8px; margin-bottom:12px;">
+        각 상마다 1명 혹은 1답변만 선택됩니다. 마감 시간이 지난 상은 자동으로 <b>투표 종료</b>로 표시됩니다.
+      </p>
+
+      <div id="awards-container">
+        로딩 중...
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // 🔧 여기를 네 Supabase 프로젝트 값으로 바꿔주세요.
+    const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+    const SUPABASE_ANON_KEY = "YOUR_ANON_PUBLIC_KEY";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const loginCard = document.getElementById("login-card");
+    const voteCard = document.getElementById("vote-card");
+    const userSelect = document.getElementById("user-select");
+    const pinInput = document.getElementById("pin-input");
+    const loginBtn = document.getElementById("login-btn");
+    const loginMsg = document.getElementById("login-message");
+    const currentUserNameEl = document.getElementById("current-user-name");
+    const currentUserIdEl = document.getElementById("current-user-id");
+    const awardsContainer = document.getElementById("awards-container");
+    const reloadBtn = document.getElementById("reload-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+
+    let currentUser = null;
+    let allUsers = [];
+    let awardOptionsByAward = {};
+    let myVotesByAward = {};
+
+    // --- 유틸 ---
+
+    function formatDateTime(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return "";
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mi = String(d.getMinutes()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+    }
+
+    function setLoginState(user) {
+      currentUser = user;
+      if (user) {
+        localStorage.setItem("bbg_voter", JSON.stringify(user));
+        loginCard.classList.add("hidden");
+        voteCard.classList.remove("hidden");
+        currentUserNameEl.textContent = `${user.name} 님`;
+        currentUserIdEl.textContent = `ID: ${user.login_id}`;
+        loadAwardsAndVotes();
+      } else {
+        localStorage.removeItem("bbg_voter");
+        loginCard.classList.remove("hidden");
+        voteCard.classList.add("hidden");
+        currentUserNameEl.textContent = "";
+        currentUserIdEl.textContent = "";
+      }
+    }
+
+    // --- 초기 유저 목록 로딩 ---
+
+    async function loadUsers() {
+      userSelect.innerHTML = `<option value="">불러오는 중...</option>`;
+      const { data, error } = await supabaseClient
+        .from("users")
+        .select("id,name,login_id")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error(error);
+        userSelect.innerHTML = `<option value="">불러오기 실패</option>`;
+        return;
+      }
+      allUsers = data || [];
+      userSelect.innerHTML = `<option value="">이름 선택</option>`;
+      allUsers.forEach(u => {
+        const opt = document.createElement("option");
+        opt.value = u.login_id;
+        opt.textContent = (u.name || "") + (u.login_id && u.login_id !== u.name ? ` (${u.login_id})` : "");
+        userSelect.appendChild(opt);
+      });
+    }
+
+    // --- 로그인 처리 ---
+
+    async function handleLogin() {
+      loginMsg.textContent = "";
+      const loginId = userSelect.value;
+      const pin = pinInput.value.trim();
+
+      if (!loginId) {
+        loginMsg.textContent = "먼저 이름을 선택하세요.";
+        return;
+      }
+      if (!pin) {
+        loginMsg.textContent = "PIN을 입력하세요.";
+        return;
+      }
+
+      loginBtn.disabled = true;
+
+      const { data, error } = await supabaseClient
+        .from("users")
+        .select("id,name,login_id,pin")
+        .eq("login_id", loginId)
+        .limit(1);
+
+      loginBtn.disabled = false;
+
+      if (error) {
+        console.error(error);
+        loginMsg.textContent = "로그인 중 오류가 발생했습니다.";
+        return;
+      }
+      const user = data && data[0];
+      if (!user || user.pin !== pin) {
+        loginMsg.textContent = "ID 또는 PIN이 올바르지 않습니다.";
+        return;
+      }
+
+      setLoginState({ id: user.id, name: user.name, login_id: user.login_id });
+    }
+
+    // --- 상/투표 로딩 및 렌더링 ---
+
+    async function loadAwardsAndVotes() {
+      if (!currentUser) return;
+      awardsContainer.textContent = "로딩 중...";
+
+      // awards, users(후보용), 옵션, 내 투표를 한 번에 불러오기
+      const [
+        { data: awards, error: aErr },
+        { data: users, error: uErr },
+        { data: options, error: oErr },
+        { data: votes, error: vErr },
+      ] = await Promise.all([
+        supabaseClient
+          .from("awards")
+          .select("id,title,description,end_at,kind,created_at")
+          .order("created_at", { ascending: true }),
+        supabaseClient
+          .from("users")
+          .select("id,name")
+          .order("name", { ascending: true }),
+        supabaseClient
+          .from("award_options")
+          .select("award_id,key,label,image_url"),
+        supabaseClient
+          .from("votes")
+          .select("award_id,candidate_id,answer_text,choice_key")
+          .eq("voter_id", currentUser.id),
+      ]);
+
+      if (aErr || uErr || vErr) {
+        console.error(aErr || uErr || vErr);
+        awardsContainer.textContent = "데이터를 불러오는 중 오류가 발생했습니다.";
+        return;
+      }
+
+      const now = new Date();
+
+      const usersById = {};
+      (users || []).forEach(u => { usersById[u.id] = u; });
+
+      awardOptionsByAward = {};
+      (options || []).forEach(o => {
+        if (!awardOptionsByAward[o.award_id]) awardOptionsByAward[o.award_id] = [];
+        awardOptionsByAward[o.award_id].push(o);
+      });
+
+      myVotesByAward = {};
+      (votes || []).forEach(v => {
+        myVotesByAward[v.award_id] = v; // 상당 마지막 기록
+      });
+
+      awardsContainer.innerHTML = "";
+      if (!awards || awards.length === 0) {
+        awardsContainer.textContent = "등록된 상이 없습니다.";
+        return;
+      }
+
+      awards.forEach(award => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.style.marginBottom = "12px";
+
+        const header = document.createElement("div");
+        header.className = "award-header";
+
+        const title = document.createElement("div");
+        title.className = "award-title";
+        title.textContent = award.title;
+        header.appendChild(title);
+
+        const kind = award.kind || "person";
+        const kindLabel = document.createElement("div");
+        kindLabel.className = "award-kind";
+        kindLabel.textContent =
+          kind === "person" ? "사람 선택형" :
+          kind === "text" ? "주관식" :
+          kind === "option" ? "보기 선택형" :
+          kind;
+        header.appendChild(kindLabel);
+
+        card.appendChild(header);
+
+        if (award.description) {
+          const desc = document.createElement("div");
+          desc.className = "award-desc";
+          desc.textContent = award.description;
+          card.appendChild(desc);
+        }
+
+        const myVote = myVotesByAward[award.id] || {};
+        const isClosed = award.end_at && new Date(award.end_at) <= now;
+
+        const msg = document.createElement("div");
+
+        let mainInput = null;
+        let optionName = `award-${award.id}`; // option형 라디오 name
+        let hasImageOptions = false;
+
+        // --- kind별 입력 UI ---
+        if (kind === "person") {
+          const label = document.createElement("label");
+          label.textContent = "후보 선택";
+          card.appendChild(label);
+
+          const select = document.createElement("select");
+          const empty = document.createElement("option");
+          empty.value = "";
+          empty.textContent = isClosed ? "투표가 종료되었습니다." : "후보를 선택하세요";
+          select.appendChild(empty);
+
+          (users || []).forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id;
+            opt.textContent = u.name || "(이름 없음)";
+            select.appendChild(opt);
+          });
+
+          if (myVote.candidate_id) {
+            select.value = myVote.candidate_id;
+          }
+
+          if (isClosed) select.disabled = true;
+
+          mainInput = select;
+          card.appendChild(select);
+        } else if (kind === "text") {
+          const label = document.createElement("label");
+          label.textContent = "자유 입력";
+          card.appendChild(label);
+
+          const textarea = document.createElement("textarea");
+          textarea.placeholder = isClosed ? "투표가 종료되었습니다." : "내용을 입력하세요.";
+          if (myVote.answer_text) textarea.value = myVote.answer_text;
+          if (isClosed) textarea.disabled = true;
+
+          mainInput = textarea;
+          card.appendChild(textarea);
+        } else if (kind === "option") {
+          const opts = awardOptionsByAward[award.id] || [];
+
+          const label = document.createElement("div");
+          label.textContent = "옵션 중에서 선택";
+          label.style.fontSize = "14px";
+          label.style.marginBottom = "4px";
+          card.appendChild(label);
+
+          const grid = document.createElement("div");
+          grid.className = "option-grid";
+
+          hasImageOptions = opts.some(o => o.image_url);
+
+          opts.forEach(o => {
+            const optionCard = document.createElement("label");
+            optionCard.className = "option-card";
+
+            const topRow = document.createElement("div");
+            topRow.className = "option-label-row";
+
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.name = optionName;
+            radio.value = o.key;
+            if (myVote.choice_key === o.key) radio.checked = true;
+            if (isClosed) radio.disabled = true;
+
+            topRow.appendChild(radio);
+
+            const text = document.createElement("span");
+            text.textContent = o.label;
+            topRow.appendChild(text);
+
+            optionCard.appendChild(topRow);
+
+            if (o.image_url) {
+              const img = document.createElement("img");
+              img.src = o.image_url;
+              img.alt = o.label;
+              optionCard.appendChild(img);
+            }
+
+            grid.appendChild(optionCard);
+          });
+
+          if (opts.length === 0) {
+            const empty = document.createElement("div");
+            empty.textContent = "등록된 옵션이 없습니다.";
+            empty.style.fontSize = "13px";
+            empty.style.color = "#9ca3af";
+            grid.appendChild(empty);
+          }
+
+          mainInput = grid;
+          card.appendChild(grid);
+        }
+
+        // --- 버튼 & 메시지 ---
+
+        const btn = document.createElement("button");
+        btn.textContent = isClosed ? "투표 마감" : "이 상에 투표";
+        if (isClosed) btn.disabled = true;
+
+        btn.addEventListener("click", async () => {
+          if (isClosed) return;
+          msg.textContent = "";
+          msg.className = "";
+
+          let candidateId = null;
+          let answerText = null;
+          let choiceKey = null;
+
+          if (kind === "person") {
+            candidateId = mainInput.value || null;
+            if (!candidateId) {
+              msg.textContent = "먼저 후보를 선택하세요.";
+              msg.className = "error";
+              return;
+            }
+          } else if (kind === "text") {
+            answerText = (mainInput.value || "").trim();
+            if (!answerText) {
+              msg.textContent = "내용을 입력하세요.";
+              msg.className = "error";
+              return;
+            }
+          } else if (kind === "option") {
+            const checked = card.querySelector(`input[name="${optionName}"]:checked`);
+            choiceKey = checked ? checked.value : null;
+            if (!choiceKey) {
+              msg.textContent = "옵션을 하나 선택하세요.";
+              msg.className = "error";
+              return;
+            }
+          }
+
+          btn.disabled = true;
+
+          const { error } = await supabaseClient
+            .from("votes")
+            .upsert({
+              award_id: award.id,
+              voter_id: currentUser.id,
+              candidate_id: candidateId,
+              answer_text: answerText,
+              choice_key: choiceKey
+            }, {
+              onConflict: "award_id,voter_id"
+            });
+
+          btn.disabled = false;
+
+          if (error) {
+            console.error(error);
+            msg.textContent = "저장 중 오류가 발생했습니다.";
+            msg.className = "error";
+          } else {
+            msg.textContent = "저장되었습니다.";
+            msg.className = "notice";
+          }
+        });
+
+        card.appendChild(btn);
+        card.appendChild(msg);
+
+        // --- 푸터(마감시간 표시 등) ---
+
+        const footer = document.createElement("div");
+        footer.className = "award-footer";
+
+        const left = document.createElement("span");
+        if (award.end_at) {
+          left.textContent = `마감: ${formatDateTime(award.end_at)}`;
+        } else {
+          left.textContent = "마감 시간 미설정";
+        }
+        footer.appendChild(left);
+
+        const right = document.createElement("span");
+        right.textContent = isClosed ? "투표 종료됨" : "투표 가능";
+        footer.appendChild(right);
+
+        card.appendChild(footer);
+
+        awardsContainer.appendChild(card);
+      });
+    }
+
+    // --- 이벤트 바인딩 & 초기 상태 복원 ---
+
+    loginBtn.addEventListener("click", handleLogin);
+    pinInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") handleLogin();
+    });
+
+    reloadBtn.addEventListener("click", () => {
+      loadAwardsAndVotes();
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      setLoginState(null);
+      userSelect.value = "";
+      pinInput.value = "";
+      loginMsg.textContent = "";
+    });
+
+    (async function init() {
+      await loadUsers();
+
+      // localStorage에 저장된 로그인 정보 있으면 복원
+      try {
+        const saved = localStorage.getItem("bbg_voter");
+        if (saved) {
+          const user = JSON.parse(saved);
+          if (user && user.id) {
+            setLoginState(user);
+          }
+        }
+      } catch (e) {
+        console.warn("saved session parse error", e);
+      }
+    })();
+  </script>
+</body>
+</html>
