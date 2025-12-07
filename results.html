@@ -170,6 +170,7 @@
         supabaseClient
           .from("awards")
           .select("id,title,description,end_at,kind,created_at,winner_id")
+          .order("sort_order", { ascending: true })
           .order("created_at", { ascending: true }),
         supabaseClient
           .from("users")
