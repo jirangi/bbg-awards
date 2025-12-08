@@ -1,538 +1,464 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
   <title>BBG Awards 결과 / 집계</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #020617;
       color: #e5e7eb;
     }
-    .page {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 16px;
+    main {
+      max-width: 980px;
+      margin: 32px auto 80px;
+      padding: 0 16px;
     }
     h1 {
-      font-size: 24px;
-      margin: 16px 0 8px;
-      text-align: center;
+      font-size: 26px;
+      margin-bottom: 8px;
     }
-    h2 {
-      font-size: 18px;
-      margin: 16px 0 8px;
+    .sub {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-bottom: 16px;
+      line-height: 1.5;
     }
-    p { font-size: 13px; color:#9ca3af; }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
     button {
-      padding: 8px 14px;
       border-radius: 999px;
       border: none;
-      font-size: 14px;
+      padding: 8px 14px;
+      font-size: 13px;
       cursor: pointer;
+      background: #1f2937;
+      color: #e5e7eb;
+    }
+    button.primary {
       background: #22c55e;
       color: #022c22;
       font-weight: 600;
-      margin-right: 8px;
     }
-    button.secondary {
-      background: #0f172a;
-      color: #e5e7eb;
-      border: 1px solid #1e293b;
+    button:hover {
+      opacity: 0.9;
     }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .error { color: #fecaca; font-size: 13px; margin-top: 6px; }
-    .notice { color: #a5b4fc; font-size: 13px; margin-top: 6px; }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
+    h2 {
+      margin-top: 28px;
+      margin-bottom: 6px;
+      font-size: 20px;
+    }
+    .note {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-bottom: 12px;
+    }
+    .section-body {
+      font-size: 14px;
       margin-bottom: 24px;
     }
-    th, td {
-      border: 1px solid #1f2937;
-      padding: 6px 8px;
-      vertical-align: top;
-    }
-    th {
+    .award-block {
       background: #020617;
-      position: sticky;
-      top: 0;
-      z-index: 1;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      border: 1px solid #1f2937;
     }
-    tr:nth-child(even) td { background: #020617; }
-    tr:nth-child(odd) td { background: #020617; }
-    .badge {
+    .award-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: baseline;
+    }
+    .award-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+    .award-meta {
+      font-size: 11px;
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+    .winner-line {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #fbbf24;
+    }
+    ol, ul {
+      margin: 6px 0 0;
+      padding-left: 18px;
+    }
+    li {
+      margin: 2px 0;
+    }
+    .muted {
+      color: #9ca3af;
+      font-size: 13px;
+    }
+    .error {
+      color: #f97373;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .pill {
       display: inline-block;
-      padding: 0 6px;
+      padding: 2px 6px;
       border-radius: 999px;
       font-size: 11px;
-      border: 1px solid #4b5563;
+      background: #111827;
       color: #9ca3af;
-    }
-    .small { font-size: 12px; color:#9ca3af; }
-    .meme-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 10px;
-    }
-    .meme-card {
-      border-radius: 10px;
-      border: 1px solid #1e293b;
-      background: #020617;
-      padding: 6px;
-      font-size: 12px;
-    }
-    .meme-card img {
-      width: 100%;
-      border-radius: 8px;
-      object-fit: cover;
-      max-height: 160px;
-      margin-bottom: 4px;
+      margin-left: 6px;
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <h1>BBG Awards 결과 / 집계</h1>
-    <p>
-      이 페이지는 관리자용입니다. Supabase DB의 내용을 읽어서 현재 투표 상황을 요약하고,  
-      <b>사람 선택형(kind = 'person') 상들</b>에 대해 <b>1인 1상 규칙</b>으로 자동 수상자를 계산해 <code>winner_id</code>에 반영합니다.
-    </p>
-
-    <div>
-      <button id="reload-btn" class="secondary">데이터 다시 불러오기</button>
-      <button id="calc-btn">1인 1상 규칙으로 수상자 계산 / 저장</button>
-      <span id="status" class="notice"></span>
-    </div>
-
-    <h2>1. 사람 선택형 상 결과 (kind = 'person')</h2>
-    <p>마감 시간이 지난 상들만 1인 1상 계산 대상이 됩니다. (end_at ≤ 현재 시각)</p>
-    <div id="person-table-wrap">로딩 중...</div>
-
-    <h2>2. 주관식 상 요약 (kind = 'text')</h2>
-    <div id="text-awards-wrap" class="small">로딩 중...</div>
-
-    <h2>3. 옵션형 상 요약 (kind = 'option')</h2>
-    <div id="option-awards-wrap" class="small">로딩 중...</div>
+<main>
+  <h1>BBG Awards 결과 / 집계</h1>
+  <div class="sub">
+    이 페이지는 관리자용입니다. Supabase DB에서 투표 데이터를 읽어와<br/>
+    사람 선택형(<code>kind = 'person'</code>) / 주관식(<code>'text'</code>) / 옵션형(<code>'option'</code>) 상들을 요약해서 보여줍니다.<br/>
+    사람 선택형 상은 1인 1상 규칙에 따라 예상 수상자를 계산합니다.
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    // 🔧 여기도 네 Supabase 프로젝트 값으로 동일하게 설정
-    const SUPABASE_URL = "https://stjdvynonapqwkhdsdbf.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_BJOCLYogz4rTiqadKrXpHw_FHtVX--d";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  <div class="btn-row">
+    <button id="reload-btn">데이터 다시 불러오기</button>
+    <button id="calc-save-btn" class="primary">1인 1상 규칙으로 수상자 계산</button>
+    <span id="status-text" class="sub"></span>
+  </div>
 
-    const reloadBtn = document.getElementById("reload-btn");
-    const calcBtn = document.getElementById("calc-btn");
-    const statusEl = document.getElementById("status");
-    const personWrap = document.getElementById("person-table-wrap");
-    const textWrap = document.getElementById("text-awards-wrap");
-    const optionWrap = document.getElementById("option-awards-wrap");
+  <section>
+    <h2>1. 사람 선택형 상 결과 (<code>kind = 'person'</code>)</h2>
+    <div class="note">마감 시간이 지난 상들에 대해 1인 1상 기준으로 예상 수상자를 계산합니다.</div>
+    <div id="person-section" class="section-body">로딩 중…</div>
+  </section>
 
-    let awards = [];
-    let users = [];
-    let votes = [];
-    let options = [];
-    let usersById = {};
-    let awardsById = {};
-    let optionsByAward = {};
+  <section>
+    <h2>2. 주관식 상 요약 (<code>kind = 'text'</code>)</h2>
+    <div class="note">같은 답변은 합쳐서 표시합니다. (대소문자/띄어쓰기 단순 정리)</div>
+    <div id="text-section" class="section-body">로딩 중…</div>
+  </section>
 
-    function formatDateTime(value) {
-      if (!value) return "";
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return "";
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth() + 1).padStart(2, "0");
-      const dd = String(d.getDate()).padStart(2, "0");
-      const hh = String(d.getHours()).padStart(2, "0");
-      const mi = String(d.getMinutes()).padStart(2, "0");
-      return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+  <section>
+    <h2>3. 옵션형 상 요약 (<code>kind = 'option'</code>)</h2>
+    <div class="note">각 옵션에 대한 득표수를 집계합니다.</div>
+    <div id="option-section" class="section-body">로딩 중…</div>
+  </section>
+</main>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+  // ✅ 여기 두 줄은 index.html과 완전히 같은 값으로 바꿔 넣어야 합니다.
+  const supabaseUrl = "https://stjdvynonapqwkhdsdbf.supabase.co";
+  const supabaseKey = "sb_publishable_BJOCLYogz4rTiqadKrXpHw_FHtVX--d";
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  const personSection = document.getElementById("person-section");
+  const textSection = document.getElementById("text-section");
+  const optionSection = document.getElementById("option-section");
+  const reloadBtn = document.getElementById("reload-btn");
+  const calcSaveBtn = document.getElementById("calc-save-btn");
+  const statusText = document.getElementById("status-text");
+
+  let cached = null; // { awards, users, options, votes }
+
+  function fmtDate(iso) {
+    if (!iso) return "마감 시간 미설정";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "마감 시간 형식 오류";
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, "0");
+    const day = d.getDate().toString().padStart(2, "0");
+    const hh = d.getHours().toString().padStart(2, "0");
+    const mm = d.getMinutes().toString().padStart(2, "0");
+    return `${y}-${m}-${day} ${hh}:${mm}`;
+  }
+
+  function groupBy(arr, keyFn) {
+    const m = new Map();
+    for (const item of arr) {
+      const k = keyFn(item);
+      if (!m.has(k)) m.set(k, []);
+      m.get(k).push(item);
+    }
+    return m;
+  }
+
+  async function loadAll() {
+    personSection.textContent = "로딩 중…";
+    textSection.textContent = "로딩 중…";
+    optionSection.textContent = "로딩 중…";
+    statusText.textContent = "";
+
+    const [{ data: awards, error: awardsErr },
+           { data: users, error: usersErr },
+           { data: options, error: optionsErr },
+           { data: votes, error: votesErr }] = await Promise.all([
+      supabase
+        .from("awards")
+        .select("id,title,description,end_at,kind,sort_order")
+        .order("sort_order", { ascending: true }),
+      supabase
+        .from("users")
+        .select("id,name")
+        .order("name", { ascending: true }),
+      supabase
+        .from("award_options")
+        .select("award_id,key,label,image_url"),
+      supabase
+        .from("votes")
+        .select("award_id,voter_id,candidate_id,answer_text,choice_key")
+    ]);
+
+    if (awardsErr || usersErr || optionsErr || votesErr) {
+      console.error("awardsErr", awardsErr);
+      console.error("usersErr", usersErr);
+      console.error("optionsErr", optionsErr);
+      console.error("votesErr", votesErr);
+      const msg =
+        (awardsErr && awardsErr.message) ||
+        (usersErr && usersErr.message) ||
+        (optionsErr && optionsErr.message) ||
+        (votesErr && votesErr.message) ||
+        "알 수 없는 오류";
+      personSection.innerHTML =
+        `<div class="error">데이터를 불러오는 중 오류가 발생했습니다: ${msg}</div>`;
+      textSection.textContent = "";
+      optionSection.textContent = "";
+      return;
     }
 
-    async function loadAll() {
-      statusEl.textContent = "";
-      personWrap.textContent = "로딩 중...";
-      textWrap.textContent = "로딩 중...";
-      optionWrap.textContent = "로딩 중...";
+    cached = { awards, users, options, votes };
 
-      const [
-        { data: awardsData, error: aErr },
-        { data: usersData, error: uErr },
-        { data: votesData, error: vErr },
-        { data: optionsData, error: oErr },
-      ] = await Promise.all([
-        supabaseClient
-          .from("awards")
-          .select("id,title,description,end_at,kind,created_at,winner_id")
-          .order("sort_order", { ascending: true })
-          .order("created_at", { ascending: true }),
-        supabaseClient
-          .from("users")
-          .select("id,name,login_id")
-          .order("name", { ascending: true }),
-        supabaseClient
-          .from("votes")
-          .select("award_id,voter_id,candidate_id,answer_text,choice_key"),
-        supabaseClient
-          .from("award_options")
-          .select("award_id,key,label,image_url"),
-      ]);
+    const usersById = new Map(users.map(u => [u.id, u]));
+    const awardsPerson = awards.filter(a => a.kind === "person");
+    const awardsText = awards.filter(a => a.kind === "text");
+    const awardsOption = awards.filter(a => a.kind === "option");
 
-      if (aErr || uErr || vErr || oErr) {
-        console.error(aErr || uErr || vErr || oErr);
-        statusEl.textContent = "데이터를 불러오는 중 오류가 발생했습니다.";
-        return;
-      }
+    const now = new Date();
 
-      awards = awardsData || [];
-      users = usersData || [];
-      votes = votesData || [];
-      options = optionsData || [];
+    const winners = computePersonWinners(awardsPerson, votes, now);
+    renderPersonSection(awardsPerson, votes, usersById, winners, now);
+    renderTextSection(awardsText, votes);
+    renderOptionSection(awardsOption, votes, options);
 
-      usersById = {};
-      users.forEach(u => { usersById[u.id] = u; });
+    statusText.textContent = `마지막 새로고침: ${fmtDate(new Date().toISOString())}`;
+  }
 
-      awardsById = {};
-      awards.forEach(a => { awardsById[a.id] = a; });
-
-      optionsByAward = {};
-      options.forEach(o => {
-        if (!optionsByAward[o.award_id]) optionsByAward[o.award_id] = [];
-        optionsByAward[o.award_id].push(o);
-      });
-
-      renderPersonAwards();
-      renderTextAwards();
-      renderOptionAwards();
+  function tallyPersonVotesForAward(awardId, votes) {
+    const m = new Map(); // candidate_id -> count
+    for (const v of votes) {
+      if (v.award_id !== awardId || !v.candidate_id) continue;
+      m.set(v.candidate_id, (m.get(v.candidate_id) || 0) + 1);
     }
+    const arr = Array.from(m.entries()).map(([candidate_id, count]) => ({ candidate_id, count }));
+    arr.sort((a, b) => b.count - a.count);
+    return arr;
+  }
 
-    function renderPersonAwards() {
-      const personAwards = awards.filter(a => (a.kind || "person") === "person");
-      if (personAwards.length === 0) {
-        personWrap.textContent = "사람 선택형 상이 없습니다.";
-        return;
+  function computePersonWinners(awardsPerson, votes, now) {
+    const winners = new Map(); // award_id -> { candidate_id, count }
+    const usedCandidates = new Set();
+
+    const closedAwards = awardsPerson.filter(a => a.end_at && new Date(a.end_at) <= now);
+
+    for (const award of closedAwards) {
+      const tallied = tallyPersonVotesForAward(award.id, votes);
+      let chosen = null;
+      for (const row of tallied) {
+        if (!usedCandidates.has(row.candidate_id)) {
+          chosen = row;
+          usedCandidates.add(row.candidate_id);
+          break;
+        }
       }
-
-      // award_id -> candidate_id -> count
-      const countsByAward = {};
-      votes.forEach(v => {
-        if (!v.candidate_id) return;
-        if (!countsByAward[v.award_id]) countsByAward[v.award_id] = {};
-        const m = countsByAward[v.award_id];
-        m[v.candidate_id] = (m[v.candidate_id] || 0) + 1;
-      });
-
-      const now = new Date();
-
-      const table = document.createElement("table");
-      const thead = document.createElement("thead");
-      thead.innerHTML = `
-        <tr>
-          <th style="width:26px;">#</th>
-          <th style="width:220px;">상 이름</th>
-          <th style="width:120px;">마감 / 상태</th>
-          <th style="width:160px;">현재 winner_id</th>
-          <th>득표 현황 (1위부터)</th>
-        </tr>
-      `;
-      table.appendChild(thead);
-
-      const tbody = document.createElement("tbody");
-
-      personAwards.forEach((a, idx) => {
-        const tr = document.createElement("tr");
-
-        const tdIdx = document.createElement("td");
-        tdIdx.textContent = idx + 1;
-        tr.appendChild(tdIdx);
-
-        const tdTitle = document.createElement("td");
-        tdTitle.innerHTML = `<b>${a.title}</b><br/><span class="small">${a.description || ""}</span>`;
-        tr.appendChild(tdTitle);
-
-        const tdEnd = document.createElement("td");
-        const isClosed = a.end_at && new Date(a.end_at) <= now;
-        tdEnd.innerHTML =
-          (a.end_at ? formatDateTime(a.end_at) : "마감 미설정") +
-          `<br/><span class="badge">${isClosed ? "마감됨" : "진행 중"}</span>`;
-        tr.appendChild(tdEnd);
-
-        const tdWinner = document.createElement("td");
-        if (a.winner_id) {
-          const u = usersById[a.winner_id];
-          tdWinner.innerHTML = `<b>${u ? u.name : "(삭제된 사용자?)"}</b><br/><span class="small">${a.winner_id}</span>`;
-        } else {
-          tdWinner.innerHTML = `<span class="small">winner_id 미설정</span>`;
-        }
-        tr.appendChild(tdWinner);
-
-        const tdStats = document.createElement("td");
-        const counts = countsByAward[a.id] || {};
-        const entries = Object.entries(counts).map(([cid, cnt]) => ({
-          candidate_id: cid,
-          count: cnt
-        }));
-        entries.sort((x, y) => y.count - x.count);
-
-        if (entries.length === 0) {
-          tdStats.innerHTML = `<span class="small">아직 투표가 없습니다.</span>`;
-        } else {
-          tdStats.innerHTML = entries.map((e, rank) => {
-            const u = usersById[e.candidate_id];
-            const name = u ? u.name : "(삭제됨)";
-            const highlight = (a.winner_id && a.winner_id === e.candidate_id)
-              ? `<b>${rank + 1}위 ${name} – ${e.count}표 (winner)</b>`
-              : `${rank + 1}위 ${name} – ${e.count}표`;
-            return highlight;
-          }).join("<br/>");
-        }
-
-        tr.appendChild(tdStats);
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(tbody);
-      personWrap.innerHTML = "";
-      personWrap.appendChild(table);
-    }
-
-    function renderTextAwards() {
-      const textAwards = awards.filter(a => a.kind === "text");
-      if (textAwards.length === 0) {
-        textWrap.textContent = "주관식 상이 없습니다.";
-        return;
-      }
-      const container = document.createElement("div");
-
-      textAwards.forEach(a => {
-        const title = document.createElement("div");
-        title.innerHTML = `<b>${a.title}</b> <span class="badge">text</span>`;
-        container.appendChild(title);
-
-        if (a.description) {
-          const desc = document.createElement("div");
-          desc.className = "small";
-          desc.textContent = a.description;
-          container.appendChild(desc);
-        }
-
-        const list = document.createElement("ul");
-        list.style.marginTop = "4px";
-
-        const related = votes.filter(v => v.award_id === a.id && v.answer_text);
-        if (related.length === 0) {
-          const li = document.createElement("li");
-          li.className = "small";
-          li.textContent = "응답 없음";
-          list.appendChild(li);
-        } else {
-          related.forEach(v => {
-            const u = usersById[v.voter_id];
-            const li = document.createElement("li");
-            li.className = "small";
-            li.textContent = `${u ? u.name : "(알 수 없음)"}: ${v.answer_text}`;
-            list.appendChild(li);
-          });
-        }
-
-        container.appendChild(list);
-        container.appendChild(document.createElement("hr"));
-      });
-
-      textWrap.innerHTML = "";
-      textWrap.appendChild(container);
-    }
-
-    function renderOptionAwards() {
-      const optionAwards = awards.filter(a => a.kind === "option");
-      if (optionAwards.length === 0) {
-        optionWrap.textContent = "옵션형 상이 없습니다.";
-        return;
-      }
-
-      const container = document.createElement("div");
-      optionAwards.forEach(a => {
-        const opts = optionsByAward[a.id] || [];
-
-        const title = document.createElement("div");
-        title.innerHTML = `<b>${a.title}</b> <span class="badge">option</span>`;
-        container.appendChild(title);
-
-        if (a.description) {
-          const desc = document.createElement("div");
-          desc.className = "small";
-          desc.textContent = a.description;
-          container.appendChild(desc);
-        }
-
-        // choice_key -> count
-        const countByChoice = {};
-        votes.filter(v => v.award_id === a.id && v.choice_key).forEach(v => {
-          countByChoice[v.choice_key] = (countByChoice[v.choice_key] || 0) + 1;
-        });
-
-        const hasImage = opts.some(o => o.image_url);
-
-        if (hasImage) {
-          // 짤방 같은 경우: 이미지 + 표 수
-          const grid = document.createElement("div");
-          grid.className = "meme-grid";
-
-          opts.forEach(o => {
-            const card = document.createElement("div");
-            card.className = "meme-card";
-
-            if (o.image_url) {
-              const img = document.createElement("img");
-              img.src = o.image_url;
-              img.alt = o.label;
-              card.appendChild(img);
-            }
-
-            const label = document.createElement("div");
-            label.textContent = o.label;
-            card.appendChild(label);
-
-            const cnt = countByChoice[o.key] || 0;
-            const cntEl = document.createElement("div");
-            cntEl.className = "small";
-            cntEl.textContent = `${cnt} 표`;
-            card.appendChild(cntEl);
-
-            grid.appendChild(card);
-          });
-
-          container.appendChild(grid);
-        } else {
-          // 지니어스 처럼 텍스트 옵션만
-          const list = document.createElement("ul");
-          list.style.marginTop = "4px";
-
-          opts.forEach(o => {
-            const li = document.createElement("li");
-            const cnt = countByChoice[o.key] || 0;
-            li.className = "small";
-            li.textContent = `${o.label} – ${cnt}표`;
-            list.appendChild(li);
-          });
-
-          container.appendChild(list);
-        }
-
-        container.appendChild(document.createElement("hr"));
-      });
-
-      optionWrap.innerHTML = "";
-      optionWrap.appendChild(container);
-    }
-
-    async function calculateWinnersOnePerPerson() {
-      statusEl.textContent = "";
-      calcBtn.disabled = true;
-
-      const personAwards = awards.filter(a => (a.kind || "person") === "person");
-      if (personAwards.length === 0) {
-        statusEl.textContent = "사람 선택형 상이 없습니다.";
-        calcBtn.disabled = false;
-        return;
-      }
-
-      const now = new Date();
-      const endedAwards = personAwards.filter(a => a.end_at && new Date(a.end_at) <= now);
-      if (endedAwards.length === 0) {
-        statusEl.textContent = "마감(end_at)이 지난 사람 선택형 상이 없습니다.";
-        calcBtn.disabled = false;
-        return;
-      }
-
-      // award_id -> candidate_id -> count
-      const countsByAward = {};
-      votes.forEach(v => {
-        if (!v.candidate_id) return;
-        if (!countsByAward[v.award_id]) countsByAward[v.award_id] = {};
-        const m = countsByAward[v.award_id];
-        m[v.candidate_id] = (m[v.candidate_id] || 0) + 1;
-      });
-
-      // created_at 순으로 정렬 후 1인 1상 계산
-      const sortedAwards = endedAwards.slice().sort((a, b) => {
-        return new Date(a.created_at) - new Date(b.created_at);
-      });
-
-      const usedWinners = new Set();
-      const winnersByAward = {};
-
-      // 이미 winner_id가 들어있는 상은 먼저 사용 처리
-      sortedAwards.forEach(a => {
-        if (a.winner_id) {
-          usedWinners.add(a.winner_id);
-          winnersByAward[a.id] = a.winner_id;
-        }
-      });
-
-      sortedAwards.forEach(a => {
-        if (a.winner_id) return; // 이미 수동 설정된 것은 건너뛴다
-
-        const counts = countsByAward[a.id] || {};
-        const entries = Object.entries(counts).map(([cid, cnt]) => ({
-          candidate_id: cid,
-          count: cnt
-        }));
-        entries.sort((x, y) => y.count - x.count);
-
-        let chosen = null;
-        for (const e of entries) {
-          if (!usedWinners.has(e.candidate_id)) {
-            chosen = e.candidate_id;
-            break;
-          }
-        }
-        // 모두 이미 상을 받았다면 chosen은 null(수상자 없음)
-        if (chosen) {
-          winnersByAward[a.id] = chosen;
-          usedWinners.add(chosen);
-        } else {
-          winnersByAward[a.id] = null;
-        }
-      });
-
-      // DB에 반영
-      try {
-        const updates = [];
-        for (const a of sortedAwards) {
-          if (!Object.prototype.hasOwnProperty.call(winnersByAward, a.id)) continue;
-          const wid = winnersByAward[a.id];
-          updates.push({ id: a.id, winner_id: wid });
-        }
-
-        for (const u of updates) {
-          const { error } = await supabaseClient
-            .from("awards")
-            .update({ winner_id: u.winner_id })
-            .eq("id", u.id);
-          if (error) throw error;
-        }
-
-        statusEl.textContent = "1인 1상 규칙으로 winner_id 저장 완료. (화면 새로고침으로 반영됨)";
-        await loadAll();
-      } catch (err) {
-        console.error(err);
-        statusEl.textContent = "winner 계산/저장 중 오류가 발생했습니다.";
-      } finally {
-        calcBtn.disabled = false;
+      if (chosen) {
+        winners.set(award.id, chosen);
       }
     }
+    return winners;
+  }
 
-    reloadBtn.addEventListener("click", loadAll);
-    calcBtn.addEventListener("click", calculateWinnersOnePerPerson);
+  function renderPersonSection(awardsPerson, votes, usersById, winners, now) {
+    if (!awardsPerson.length) {
+      personSection.innerHTML = '<p class="muted">사람 선택형 상이 없습니다.</p>';
+      return;
+    }
 
-    loadAll();
-  </script>
+    const parts = [];
+
+    for (const award of awardsPerson) {
+      const tallied = tallyPersonVotesForAward(award.id, votes);
+      const isClosed = award.end_at && new Date(award.end_at) <= now;
+      const winnerInfo = winners.get(award.id);
+
+      let html = `<div class="award-block">`;
+      html += `<div class="award-title-row">`;
+      html += `<div class="award-title">${award.title}</div>`;
+      html += `<div class="award-meta">마감: ${fmtDate(award.end_at)}${!isClosed ? ' <span class="pill">아직 마감 전</span>' : ''}</div>`;
+      html += `</div>`;
+      if (award.description) {
+        html += `<div class="muted">${award.description}</div>`;
+      }
+
+      if (!tallied.length) {
+        html += `<p class="muted">아직 투표가 없습니다.</p>`;
+      } else {
+        if (winnerInfo && isClosed) {
+          const user = usersById.get(winnerInfo.candidate_id);
+          const name = user ? user.name : "(삭제됨)";
+          html += `<div class="winner-line">🏆 예상 수상자: <strong>${name}</strong> (${winnerInfo.count}표)</div>`;
+        }
+        html += `<ol>`;
+        for (const row of tallied) {
+          const user = usersById.get(row.candidate_id);
+          const name = user ? user.name : "(삭제됨)";
+          const crown = winnerInfo && winnerInfo.candidate_id === row.candidate_id ? "🥇 " : "";
+          html += `<li>${crown}${name} - ${row.count}표</li>`;
+        }
+        html += `</ol>`;
+      }
+
+      html += `</div>`;
+      parts.push(html);
+    }
+
+    personSection.innerHTML = parts.join("");
+  }
+
+  function renderTextSection(awardsText, votes) {
+    if (!awardsText.length) {
+      textSection.innerHTML = '<p class="muted">주관식 상이 없습니다.</p>';
+      return;
+    }
+
+    const parts = [];
+
+    for (const award of awardsText) {
+      const relevant = votes.filter(v => v.award_id === award.id && v.answer_text && v.answer_text.trim().length);
+      if (!relevant.length) {
+        parts.push(
+          `<div class="award-block">
+             <div class="award-title-row">
+               <div class="award-title">${award.title}</div>
+               <div class="award-meta">응답 0개</div>
+             </div>
+             <p class="muted">아직 응답이 없습니다.</p>
+           </div>`
+        );
+        continue;
+      }
+
+      const counts = groupBy(relevant, v => v.answer_text.trim());
+      const rows = Array.from(counts.entries()).map(([answer, arr]) => ({
+        answer,
+        count: arr.length
+      }));
+      rows.sort((a, b) => b.count - a.count);
+
+      let html = `<div class="award-block">`;
+      html += `<div class="award-title-row">
+                 <div class="award-title">${award.title}</div>
+                 <div class="award-meta">응답 ${relevant.length}개</div>
+               </div>`;
+      if (award.description) {
+        html += `<div class="muted">${award.description}</div>`;
+      }
+      html += `<ol>`;
+      for (const row of rows) {
+        html += `<li>${row.answer} - ${row.count}표</li>`;
+      }
+      html += `</ol>`;
+      html += `</div>`;
+      parts.push(html);
+    }
+
+    textSection.innerHTML = parts.join("");
+  }
+
+  function renderOptionSection(awardsOption, votes, options) {
+    if (!awardsOption.length) {
+      optionSection.innerHTML = '<p class="muted">옵션형 상이 없습니다.</p>';
+      return;
+    }
+
+    const labelMap = new Map(); // `${award_id}|${key}` -> label
+    for (const o of options) {
+      labelMap.set(`${o.award_id}|${o.key}`, o.label || o.key);
+    }
+
+    const parts = [];
+
+    for (const award of awardsOption) {
+      const relevant = votes.filter(v => v.award_id === award.id && v.choice_key);
+      if (!relevant.length) {
+        parts.push(
+          `<div class="award-block">
+             <div class="award-title-row">
+               <div class="award-title">${award.title}</div>
+               <div class="award-meta">투표 0개</div>
+             </div>
+             <p class="muted">아직 투표가 없습니다.</p>
+           </div>`
+        );
+        continue;
+      }
+
+      const counts = groupBy(relevant, v => v.choice_key);
+      const rows = Array.from(counts.entries()).map(([key, arr]) => ({
+        key,
+        label: labelMap.get(`${award.id}|${key}`) || key,
+        count: arr.length
+      }));
+      rows.sort((a, b) => b.count - a.count);
+
+      let html = `<div class="award-block">`;
+      html += `<div class="award-title-row">
+                 <div class="award-title">${award.title}</div>
+                 <div class="award-meta">투표 ${relevant.length}개</div>
+               </div>`;
+      if (award.description) {
+        html += `<div class="muted">${award.description}</div>`;
+      }
+      html += `<ol>`;
+      for (const row of rows) {
+        html += `<li>${row.label} - ${row.count}표</li>`;
+      }
+      html += `</ol>`;
+      html += `</div>`;
+      parts.push(html);
+    }
+
+    optionSection.innerHTML = parts.join("");
+  }
+
+  // 1인 1상 규칙으로 예상 수상자 계산만 다시 수행 (DB 저장은 하지 않음)
+  async function recalcWinnersOnly() {
+    if (!cached) {
+      await loadAll();
+      return;
+    }
+    const { awards, votes, users } = cached;
+    const usersById = new Map(users.map(u => [u.id, u]));
+    const awardsPerson = awards.filter(a => a.kind === "person");
+    const now = new Date();
+    const winners = computePersonWinners(awardsPerson, votes, now);
+    renderPersonSection(awardsPerson, votes, usersById, winners, now);
+    statusText.textContent = "1인 1상 규칙으로 예상 수상자를 다시 계산했습니다.";
+  }
+
+  reloadBtn.addEventListener("click", loadAll);
+  calcSaveBtn.addEventListener("click", recalcWinnersOnly);
+
+  // 최초 로딩
+  loadAll();
+</script>
 </body>
 </html>
